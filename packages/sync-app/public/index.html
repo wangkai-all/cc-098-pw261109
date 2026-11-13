@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OData 增量采集台</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>OData 增量采集台</h1>
+    <div class="topbar-meta">
+      <span id="server-time"></span>
+      <a class="ghost-link" href="#panel-sample">示例服务故障台 →</a>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="sync">同步控制</button>
+    <button class="tab" data-tab="data">数据浏览</button>
+    <button class="tab" data-tab="sample">示例服务 / 故障台</button>
+  </nav>
+
+  <!-- ========== 同步控制 ========== -->
+  <section id="panel-sync" class="panel active">
+    <div id="collection-cards" class="cards"></div>
+    <h2 class="section-title">轮次记录（含重启恢复）</h2>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th><th>集合</th><th>类型</th><th>状态</th><th>请求数</th>
+            <th>新增</th><th>更新</th><th>删除</th><th>重复页</th><th>过期事件</th>
+            <th>开始</th><th>结束</th><th>错误</th>
+          </tr>
+        </thead>
+        <tbody id="rounds-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========== 数据浏览 ========== -->
+  <section id="panel-data" class="panel">
+    <div class="toolbar">
+      <label>集合
+        <select id="entity-collection">
+          <option value="customers">customers（客户）</option>
+          <option value="addresses">addresses（地址）</option>
+        </select>
+      </label>
+      <label>状态
+        <select id="entity-status">
+          <option value="">全部</option>
+          <option value="active">active 有效</option>
+          <option value="orphan">orphan 暂存（找不到客户）</option>
+          <option value="tombstoned">tombstoned 已删除</option>
+        </select>
+      </label>
+      <span id="entity-count" class="muted"></span>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead id="entity-thead"></thead>
+        <tbody id="entity-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ========== 示例服务 ========== -->
+  <section id="panel-sample" class="panel">
+    <div class="cards">
+      <div class="card">
+        <h3>服务快照</h3>
+        <pre id="sample-snapshot" class="snapshot">加载中…</pre>
+        <div class="btn-row">
+          <button class="btn" id="btn-refresh-snapshot">刷新</button>
+          <button class="btn danger" id="btn-reset-sample">重置示例数据</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>故障注入（下一轮生效）</h3>
+        <p class="muted small">分页中断：指定页返回一次 500；重复页：指定页把上一页原样重发一次；游标过期：所有 nextLink / deltaLink 立即失效（410）。</p>
+        <div class="form-grid">
+          <label>集合
+            <select id="fault-collection">
+              <option value="customers">customers</option>
+              <option value="addresses">addresses</option>
+            </select>
+          </label>
+          <label>故障
+            <select id="fault-type">
+              <option value="failPage">分页中断（第 N 页 500）</option>
+              <option value="dupPage">重复响应（第 N 页重发）</option>
+            </select>
+          </label>
+          <label>第几页 <input id="fault-page" type="number" min="2" value="2" /></label>
+        </div>
+        <div class="btn-row">
+          <button class="btn warn" id="btn-arm-fault">布置故障</button>
+          <button class="btn danger" id="btn-expire">让所有游标过期</button>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">制造数据变化</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>客户</h3>
+        <div class="form-grid">
+          <input id="c-name" placeholder="名称" />
+          <input id="c-email" placeholder="邮箱" />
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-c-create">新增客户</button>
+          <input id="c-id" type="number" placeholder="客户 Id" class="id-input" />
+          <button class="btn" id="btn-c-update">更新该客户（改名）</button>
+          <button class="btn danger" id="btn-c-delete">删除该客户</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>地址</h3>
+        <div class="form-grid">
+          <input id="a-customer" type="number" placeholder="CustomerId" />
+          <input id="a-city" placeholder="城市" />
+          <input id="a-street" placeholder="街道" />
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="btn-a-create">新增地址</button>
+          <input id="a-id" type="number" placeholder="地址 Id" class="id-input" />
+          <button class="btn" id="btn-a-update">更新该地址</button>
+          <button class="btn danger" id="btn-a-delete">删除该地址</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 溯源抽屉 -->
+  <div id="modal-mask" class="modal-mask hidden">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modal-title">溯源</h3>
+        <button class="btn small" id="modal-close">关闭</button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
